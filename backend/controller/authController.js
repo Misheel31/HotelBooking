@@ -3,6 +3,7 @@ const User = require("../model/userModel");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const mongoose = require("mongoose");
+const logActivity = require("../utils/activityLogger");
 
 const test = (req, res) => {
   res.json("test is working");
@@ -20,10 +21,6 @@ const registerUser = async (req, res) => {
       return res
         .status(400)
         .json({ error: "Password must be at least 8 characters long" });
-    }
-
-    if (password !== confirmPassword) {
-      return res.status(400).json({ error: "Passwords do not match" });
     }
 
     if (password !== confirmPassword) {
@@ -51,13 +48,24 @@ const registerUser = async (req, res) => {
       phone,
     });
     await user.save();
+
+    await logActivity({
+      req,
+      userId: user._id,
+      action: "USER_REGISTER",
+      details: {
+        username: user.username,
+        email: user.email,
+      },
+    });
+
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 587,
       secure: false,
       auth: {
-        user: "misheelrai7@gmail.com",
-        pass: "xrkq aaze gzsr ssvb",
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
@@ -106,25 +114,60 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ error: "Invalid password" });
     }
 
+    if (user.role === "admin") {
+      const token = jwt.sign(
+        { id: user._id, username: user.username, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "90d" }
+      );
+
+      user.tokens = user.tokens.concat({ token });
+      await user.save();
+
+      await logActivity({
+        req,
+        userId: user._id,
+        action: "ADMIN_LOGIN_SUCCESS",
+        details: {
+          email: user.email,
+        },
+      });
+
+      return res.status(200).json({
+        message: "Admin login successful",
+        userId: user._id,
+        token,
+      });
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = Date.now() + 15 * 60 * 1000; // expires in 15 mins
+    const otpExpiry = Date.now() + 15 * 60 * 1000;
 
     user.otp = otp;
     user.otpExpiry = otpExpiry;
     await user.save();
 
-    // const token = jwt.sign(
-    //   {
-    //     id: user._id,
-    //     username: user.username,
-    //     role: user.role,
-    //   },
-    //   process.env.JWT_SECRET,
-    //   { expiresIn: "7d" }
-    // );
+    await logActivity({
+      req,
+      userId: user._id,
+      action: "USER_LOGIN_OTP_SENT",
+      details: {
+        email: user.email,
+      },
+    });
 
-    // user.tokens = user.tokens.concat({ token });
-    // await user.save();
+    const token = jwt.sign(
+      {
+        id: user._id,
+        username: user.username,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "90d" }
+    );
+
+    user.tokens = user.tokens.concat({ token });
+    await user.save();
 
     // res.cookie("token", token, {
     //   httpOnly: true,
@@ -138,8 +181,8 @@ const loginUser = async (req, res) => {
       port: 587,
       secure: false,
       auth: {
-        user: "misheelrai7@gmail.com",
-        pass: "xrkq aaze gzsr ssvb",
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
@@ -180,7 +223,7 @@ const loginAdmin = async (e) => {
       localStorage.setItem("adminUser", JSON.stringify(user));
       setData({
         email: "admin@gmail.com",
-        password: "AdminPassword",
+        password: "Admin@123",
       });
       navigate("/admin");
     }
@@ -211,6 +254,15 @@ const changePassword = async (req, res) => {
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
+    await logActivity({
+      req,
+      userId: user._id,
+      action: "USER_PASSWORD_CHANGED",
+      details: {
+        email: user.email,
+      },
+    });
+
     res.json({ success: "Password changed successfully!" });
   } catch (error) {
     console.error(error);
@@ -236,6 +288,15 @@ const forgotPassword = async (req, res) => {
     user.otp = otp;
     user.otpExpiry = otpExpiry;
     await user.save();
+
+    await logActivity({
+      req,
+      userId: user._id,
+      action: "USER_FORGOT_PASSWORD_OTP_SENT",
+      details: {
+        email: user.email,
+      },
+    });
 
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
@@ -287,11 +348,20 @@ const resetPassword = async (req, res) => {
     }
     // const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    user.password= newPassword;
+    user.password = newPassword;
     user.otp = null;
     user.otpExpiry = null;
 
     await user.save();
+
+    await logActivity({
+      req,
+      userId: user._id,
+      action: "USER_PASSWORD_RESET",
+      details: {
+        email: user.email,
+      },
+    });
 
     res.json({ success: "Password updated successfully!" });
   } catch (error) {
@@ -302,11 +372,17 @@ const resetPassword = async (req, res) => {
   }
 };
 
-const logoutUser = (req, res) => {
+const logoutUser = async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
+  });
+  await logActivity({
+    req,
+    userId: req.user ? req.user._id : null,
+    action: "USER_LOGOUT",
+    details: {},
   });
   res.status(200).json({ message: "Logged out successfully" });
 };
@@ -321,7 +397,6 @@ const verifyLoginOTP = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Add debug logs here, before you check OTP and expiry
     console.log("User OTP in DB:", user.otp);
     console.log("OTP expiry timestamp:", user.otpExpiry);
     console.log("Current timestamp:", Date.now());
@@ -350,6 +425,15 @@ const verifyLoginOTP = async (req, res) => {
 
     user.tokens = user.tokens.concat({ token });
     await user.save();
+
+    await logActivity({
+      req,
+      userId: user._id,
+      action: "USER_LOGIN_SUCCESS",
+      details: {
+        email: user.email,
+      },
+    });
 
     res.cookie("token", token, {
       httpOnly: true,
