@@ -162,6 +162,7 @@ const stripeWebhook = async (req, res) => {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
+    console.log("Webhook received with event:", event.type);
   } catch (err) {
     console.error("Webhook signature verification failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -178,7 +179,7 @@ const stripeWebhook = async (req, res) => {
       // Log activity
       await logActivity({
         req,
-        userId: null, 
+        userId: null,
         action: "PAYMENT_COMPLETED",
         details: { bookingId, sessionId: session.id },
       });
@@ -190,10 +191,24 @@ const stripeWebhook = async (req, res) => {
   res.status(200).send("Webhook received");
 };
 
+const getAllBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find()
+      .populate("userId", "name email")
+      .populate("hotelRoomId");
+
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error("Error fetching all bookings:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   createBooking,
   getBookingsByUserId,
   deleteBookingById,
   createCheckoutSession,
   stripeWebhook,
+  getAllBookings,
 };
