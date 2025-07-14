@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
 
 // Password strength validator
 function isStrongPassword(password) {
+  if (password.length < 8 || password.length > 64) return false;
   const strongRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
   return strongRegex.test(password);
@@ -69,14 +70,17 @@ userSchema.pre("save", async function (next) {
   } catch (error) {
     return next(error);
   }
-  if (this.isModified("phone") && this.phone) {
-    try {
-      const salt = await bcrypt.genSalt(10);
-      this.phone = await bcrypt.hash(this.phone, salt);
-    } catch (error) {
-      return next(error);
+  userSchema.pre("save", async function (next) {
+    if (this.isModified("phone") && this.phone) {
+      try {
+        const salt = await bcrypt.genSalt(10);
+        this.phone = await bcrypt.hash(this.phone, salt);
+      } catch (error) {
+        return next(error);
+      }
     }
-  }
+    next();
+  });
 
   next();
 });

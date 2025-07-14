@@ -6,15 +6,15 @@ const hotelRoomSchema = new mongoose.Schema(
     description: { type: String, required: true },
     hotelName: { type: String, required: true },
     location: { type: String, required: true },
-    image: { type: String, required: true },
-    pricePerNight: { type: Number, required: true }, 
+    image: [{ type: String, required: true }],
+    pricePerNight: { type: Number, required: true },
     available: { type: Boolean, default: true },
     amenities: [String],
 
     roomTypes: [
       {
-        type: { type: String, required: true }, 
-        name: { type: String, required: true }, 
+        type: { type: String, required: true },
+        name: { type: String, required: true },
         price: { type: Number, required: true },
         size: { type: String },
         capacity: { type: Number },
