@@ -6,6 +6,7 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [_id, setUserId] = useState(null);
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -14,6 +15,7 @@ export const AuthProvider = ({ children }) => {
 
     if (token) {
       setIsLoggedIn(true);
+      setToken(token);
       setUsername(savedUsername || "");
       setUserId(savedUserId || null);
     }
@@ -26,6 +28,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("ID", userId);
       setIsLoggedIn(true);
       setUsername(username);
+      setToken(token);
       setUserId(userId);
     } else {
       console.error("Missing token, username, or userId");
@@ -33,11 +36,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    localStorage.removeItem("Token");
     localStorage.removeItem("authToken");
     localStorage.removeItem("username");
     localStorage.removeItem("ID");
     setIsLoggedIn(false);
     setUsername("");
+    setToken(null);
     setUserId(null);
   };
 
@@ -50,7 +55,15 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn, username, login, logout, updateUsername, _id }}
+      value={{
+        isLoggedIn,
+        username,
+        login,
+        logout,
+        updateUsername,
+        _id,
+        token,
+      }}
     >
       {children}
     </AuthContext.Provider>
