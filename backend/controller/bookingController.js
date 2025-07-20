@@ -7,7 +7,6 @@ const logActivity = require("../utils/activityLogger");
 const createBooking = async (req, res) => {
   try {
     const {
-      userId,
       hotelRoomId,
       checkInDate,
       checkOutDate,
@@ -17,7 +16,6 @@ const createBooking = async (req, res) => {
     } = req.body;
 
     if (
-      !userId ||
       !hotelRoomId ||
       !checkInDate ||
       !checkOutDate ||
@@ -31,7 +29,7 @@ const createBooking = async (req, res) => {
     }
 
     const booking = new Booking({
-      userId,
+      userId: req.user._id,
       hotelRoomId,
       checkInDate,
       checkOutDate,
@@ -45,7 +43,7 @@ const createBooking = async (req, res) => {
     //activity log
     await logActivity({
       req,
-      userId,
+      userId: req.user._id,
       action: "CREATE_BOOKING",
       details: {
         bookingId: booking._id,
@@ -130,8 +128,8 @@ const createCheckoutSession = async (req, res) => {
         },
       ],
       mode: "payment",
-      success_url: `http://localhost:5173/success?session_id=cs_test_a1VUgrmydFOCkdxyuDTUCcLLEDg2LE7AuEfwJXxMkJzaz8EUA9taqWRdOp`,
-      cancel_url: `http://localhost:5173/cancel`,
+      success_url: `https://localhost:5173/success?session_id=cs_test_a1VUgrmydFOCkdxyuDTUCcLLEDg2LE7AuEfwJXxMkJzaz8EUA9taqWRdOp`,
+      cancel_url: `https://localhost:5173/cancel`,
       metadata: {
         bookingId: bookingId,
       },
