@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import zxcvbn from "zxcvbn";
 
 const RegisterPage = () => {
@@ -60,7 +61,7 @@ const RegisterPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/auth/register",
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/register`,
         {
           username: data.username,
           email: data.email,
@@ -71,6 +72,7 @@ const RegisterPage = () => {
       );
 
       setSuccess("Registration successful!");
+      toast.success("Registration successful!");
       setLoading(false);
 
       setTimeout(() => navigate("/login"), 1500);
