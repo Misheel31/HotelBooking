@@ -1,17 +1,32 @@
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 import { Eye, EyeOff, Lock, Mail, MapPin, Star } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAuth } from "../Context/AuthContext";
 
 const LoginPage = () => {
-  const [data, setData] = useState({ email: "", password: "" });
+  console.log("import.meta.env:", import.meta.env);
+  console.log("API Base URL:", import.meta.env.VITE_API_BASE_URL);
+
+  const savedEmail = localStorage.getItem("rememberedEmail") || "";
+  const [data, setData] = useState({ email: savedEmail, password: "" });
+  const [rememberMe, setRememberMe] = useState(!!savedEmail);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (rememberMe) {
+      localStorage.setItem("rememberedEmail", data.email);
+    } else {
+      localStorage.removeItem("rememberedEmail");
+    }
+  }, [rememberMe, data.email]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -21,19 +36,39 @@ const LoginPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/auth/login",
+        // Use environment variable here
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
         data
       );
 
-      if (response.data.mfaRequired) {
-        localStorage.setItem("pendingUserId", response.data.userId);
+      const { token, mfaRequired, userId } = response.data;
+
+      if (mfaRequired) {
+        localStorage.setItem("pendingUserId", userId);
         navigate("/verify-otp");
+      } else if (token) {
+        localStorage.removeItem("pendingUserId");
+        localStorage.setItem("authToken", token);
+        const decoded = jwtDecode(token);
+        const role = decoded.role;
+        console.log("Decoded user role:", role);
+
+        toast.success("Login successful!");
+
+        if (role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
       } else {
-        setError("Unexpected response. Please try again.");
+        toast.error("Unexpected response. Please try again.");
       }
     } catch (err) {
       console.log("Login error:", err.response?.status, err.response?.data);
       setError(err.response?.data?.error || "Login failed. Please try again.");
+      toast.error(
+        err.response?.data?.error || "Login failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -49,6 +84,7 @@ const LoginPage = () => {
             className="h-full w-full bg-cover bg-center transform scale-105 hover:scale-110 transition-transform duration-700"
             style={{
               backgroundImage:
+                // Note: Use relative URL or import images for production
                 'url(\'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600"%3E%3Cdefs%3E%3ClinearGradient id="bg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23667eea;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%23764ba2;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="400" height="600" fill="url(%23bg)" /%3E%3C/svg%3E\')',
               clipPath: "polygon(0 0, 100% 0, 85% 100%, 0% 100%)",
             }}
@@ -102,7 +138,7 @@ const LoginPage = () => {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6" noValidate>
             <div className="space-y-6">
               <div className="relative group">
                 <Mail className="absolute left-4 top-3.5 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
@@ -131,6 +167,7 @@ const LoginPage = () => {
                 <div
                   className="absolute right-4 top-3.5 cursor-pointer text-gray-400 hover:text-blue-500 transition-colors"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <Eye className="w-5 h-5" />
@@ -144,6 +181,8 @@ const LoginPage = () => {
                 <label className="flex items-center gap-2 text-gray-600">
                   <input
                     type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                     className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
                   />
                   Remember me
