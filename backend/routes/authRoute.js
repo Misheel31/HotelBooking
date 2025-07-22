@@ -26,7 +26,7 @@ router.post("/logout", authenticateUser, logoutUser);
 router.post("/verify-login-otp", verifyLoginOTP);
 
 router.get(
-  "/admin-only-route",
+  "/admin",
   authenticateUser,
   authorizeRoles("admin"),
   (req, res) => {

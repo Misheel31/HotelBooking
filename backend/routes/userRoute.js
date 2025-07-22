@@ -11,6 +11,8 @@ const {
 const router = express.Router();
 
 const multer = require("multer");
+const authenticateUser = require("../middleware/userAuthenticate");
+const authorizeRoles = require("../middleware/authorizeRole");
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -33,9 +35,9 @@ const upload = multer({
 
 router.get("/", findAll);
 router.post("/", save);
-router.get("/:id", findById);
-router.delete("/:id", deleteById);
-router.put("/:id", update);
 router.post("/uploadImage", upload.single("image"), uploadImage);
+router.get("/:id", findById);
+router.delete("/:id", authenticateUser, authorizeRoles("admin"), deleteById);
+router.put("/:id", update);
 
 module.exports = router;
