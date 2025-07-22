@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../Context/AuthContext";
 
@@ -28,6 +29,7 @@ const HotelDetails = () => {
   const [checkOutDate, setCheckOutDate] = useState("");
   const [selectedRoom, setSelectedRoom] = useState("standard");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [success, setSuccess] = useState("");
 
   const { hotelId } = useParams();
   const navigate = useNavigate();
@@ -120,7 +122,7 @@ const HotelDetails = () => {
         totalPrice: totalPrice + Math.round(totalPrice * 0.15),
       };
       console.log("Booking data:", bookingData);
-
+      console.log("Token from context:", token);
       await axios.post(
         "http://localhost:3000/api/booking/create",
         bookingData,
@@ -128,11 +130,13 @@ const HotelDetails = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      alert("Booking successful!");
+      setSuccess("Booking successful!");
+      toast.success("Booking successful!");
       // navigate("/my-booking");
     } catch (err) {
       console.error(err.response?.data || err.message);
-      alert("Booking failed. Please try again.");
+      setError("Booking failed. Please try again.");
+      toast.error("Booking failed. Please try again.");
     }
   };
 
