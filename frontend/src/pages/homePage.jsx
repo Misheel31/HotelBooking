@@ -12,7 +12,7 @@ const HomePage = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-100 to-blue-300 pt-24 pb-20">
+      <div className="bg-gradient-to-br from-blue-100 to-blue-200 pt-24 pb-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="md:w-1/2 text-blue-900 max-w-lg">
