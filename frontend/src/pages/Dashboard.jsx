@@ -32,9 +32,10 @@ const Dashboard = () => {
       try {
         setLoading(true);
         setError("");
-        const url = `http://localhost:3000/api/hotel/hotel-rooms${
-          location ? `?location=${encodeURIComponent(location)}` : ""
-        }`;
+        const url = `${
+          import.meta.env.VITE_API_BASE_URL
+        }/api/hotel/hotel-rooms`;
+
         const response = await axios.get(url);
         setHotels(response.data);
       } catch (err) {
@@ -45,7 +46,7 @@ const Dashboard = () => {
     };
 
     fetchHotels();
-  }, [location]);
+  }, []);
 
   const handleSearchChange = (e) => setSearchTerm(e.target.value);
   const handleLocationChange = (e) => setLocation(e.target.value);
@@ -66,11 +67,14 @@ const Dashboard = () => {
       }
 
       if (favorites.has(hotelId)) {
-        await axios.delete(`http://localhost:3000/api/wishlist/${hotelId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await axios.delete(
+          `${import.meta.env.VITE_API_BASE_URL}/api/wishlist/${hotelId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         setFavorites((prev) => {
           const newFavs = new Set(prev);
@@ -79,7 +83,7 @@ const Dashboard = () => {
         });
       } else {
         await axios.post(
-          "http://localhost:3000/api/wishlist/",
+          `${import.meta.env.VITE_API_BASE_URL}/api/wishlist/`,
           { hotelRoomId: hotelId },
           {
             headers: {
@@ -252,7 +256,9 @@ const Dashboard = () => {
 
                 {/* Hotel Image */}
                 <img
-                  src={`http://localhost:3000/hotel_room_images/${hotel.image}`}
+                  src={`${
+                    import.meta.env.VITE_API_BASE_URL
+                  }/hotel_room_images/${hotel.image}`}
                   alt={hotel.title}
                   className="w-full h-60 object-cover cursor-pointer"
                   onClick={() => goToHotelDetails(hotel._id)}
