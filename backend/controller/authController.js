@@ -5,6 +5,7 @@ const nodemailer = require("nodemailer");
 const mongoose = require("mongoose");
 const logActivity = require("../utils/activityLogger");
 const { encrypt } = require("../utils/encryption");
+const verifyCaptcha = require("../utils/verifyCaptcha");
 
 const test = (req, res) => {
   res.json("test is working");
@@ -12,7 +13,17 @@ const test = (req, res) => {
 
 const registerUser = async (req, res) => {
   try {
-    const { username, email, password, confirmPassword, phone } = req.body;
+    const { username, email, password, confirmPassword, phone, captchaToken } =
+      req.body;
+
+    if (!captchaToken) {
+      return res.status(400).json({ error: "CAPTCHA verification failed" });
+    }
+
+    const isCaptchaValid = await verifyCaptcha(captchaToken);
+    if (!isCaptchaValid) {
+      return res.status(400).json({ error: "CAPTCHA validation failed" });
+    }
 
     if (!username || !email || !password || !confirmPassword) {
       return res.status(400).json({ error: "All fields are required" });

@@ -28,6 +28,17 @@ const createBooking = async (req, res) => {
         .json({ message: "All booking fields are required." });
     }
 
+    if (new Date(checkInDate) >= new Date(checkOutDate)) {
+      return res
+        .status(400)
+        .json({ message: "Check-out date must be after check-in date." });
+    }
+    if (new Date(checkInDate) < new Date()) {
+      return res
+        .status(400)
+        .json({ message: "Check-in date cannot be in the past." });
+    }
+
     const booking = new Booking({
       userId: req.user._id,
       hotelRoomId,
