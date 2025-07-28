@@ -24,7 +24,7 @@ const UpdateHotelRoom = () => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/hotel/hotel-rooms/${id}`
+          `${import.meta.env.VITE_API_BASE_URL}/api/hotel/hotel-rooms/${id}`
         );
         const hotelData = response.data;
 
@@ -77,7 +77,7 @@ const UpdateHotelRoom = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:3000/api/hotel/hotel-rooms/${id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/hotel/hotel-rooms/${id}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -109,9 +109,9 @@ const UpdateHotelRoom = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      {/* <div className="w-64">
+      <div className="w-64">
         <AdminSidebar />
-      </div> */}
+      </div>
       <h2 className="text-2xl font-semibold text-center mb-6">
         Update Hotel Room
       </h2>
@@ -185,7 +185,9 @@ const UpdateHotelRoom = () => {
               src={
                 data.image instanceof File
                   ? URL.createObjectURL(data.image)
-                  : `http://localhost:3000/hotel_room_images/${data.image}`
+                  : `${import.meta.env.VITE_API_BASE_URL}/hotel_room_images/${
+                      data.image
+                    }`
               }
               alt="Hotel Room"
               className="w-full h-40 object-cover mb-4 rounded-md"

@@ -13,7 +13,7 @@ const AdminPage = () => {
     const fetchHotels = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/hotel/hotel-rooms`
+          `${import.meta.env.VITE_API_BASE_URL}/api/hotel/hotel-rooms`
         );
         setHotels(response.data);
       } catch (error) {
@@ -29,7 +29,9 @@ const AdminPage = () => {
   // Handle hotel deletion
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:3000/api/hotel/hotel-rooms/${id}`);
+      await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}/api/hotel/hotel-rooms/${id}`
+      );
       setHotels((prevHotels) => prevHotels.filter((hotel) => hotel._id !== id));
       toast.success("Hotel deleted successfully");
     } catch (error) {
@@ -62,7 +64,9 @@ const AdminPage = () => {
               >
                 <Link to={`/AdminManageHotelDetails/${hotel._id}`}>
                   <img
-                    src={`http://localhost:3000/hotel_room_images/${hotel.image}`}
+                    src={`${
+                      import.meta.env.VITE_API_BASE_URL
+                    }/hotel_room_images/${hotel.image}`}
                     alt={hotel.title}
                     className="w-full h-48 object-cover"
                   />

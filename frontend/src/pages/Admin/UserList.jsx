@@ -11,7 +11,7 @@ const UserList = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/user/");
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/user/`);
         console.log("Fetched users:", response.data);
         setUsers(response.data);
         setLoading(false);

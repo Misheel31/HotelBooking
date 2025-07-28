@@ -1,5 +1,6 @@
 import {
   FaBook,
+  FaClipboardList,
   FaSignOutAlt,
   FaTachometerAlt,
   FaUpload,
@@ -13,6 +14,7 @@ const AdminSidebar = ({ isOpen = true, onClose }) => {
     { icon: FaUpload, label: "Create Hotel", path: "/create" },
     { icon: FaUsers, label: "Users", path: "/users" },
     { icon: FaBook, label: "Booking list", path: "/BookingList" },
+    { icon: FaClipboardList, label: "Activity Logs", path: "/activity-log" },
     { icon: FaSignOutAlt, label: "Logout", path: "/", action: "logout" },
   ];
 
