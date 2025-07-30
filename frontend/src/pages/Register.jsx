@@ -9,12 +9,15 @@ import {
   Star,
   User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import zxcvbn from "zxcvbn";
 
 const RegisterPage = () => {
+  const recaptchaRef = useRef(null);
+  const [captchaToken, setCaptchaToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -31,6 +34,11 @@ const RegisterPage = () => {
   const [error, setError] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordStrengthVisible, setPasswordStrengthVisible] = useState(false);
+  const passwordPolicyRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+  const onCaptchaChange = (token) => {
+    setCaptchaToken(token);
+  };
 
   useEffect(() => {
     setPasswordMatch(
@@ -55,6 +63,24 @@ const RegisterPage = () => {
 
   const registerUser = async (e) => {
     e.preventDefault();
+
+    if (!passwordPolicyRegex.test(data.password)) {
+      toast.error(
+        "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character."
+      );
+      return;
+    }
+
+    if (data.password !== data.confirmPassword) {
+      toast.error("Passwords do not match!");
+      return;
+    }
+
+    if (!captchaToken) {
+      setError("Please complete the CAPTCHA challenge");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -68,20 +94,29 @@ const RegisterPage = () => {
           phone: data.phone,
           password: data.password,
           confirmPassword: data.confirmPassword,
+          captchaToken,
         }
       );
 
-      setSuccess("Registration successful!");
-      toast.success("Registration successful!");
-      setLoading(false);
-
-      setTimeout(() => navigate("/login"), 1500);
+      const userId = response.data?.userId;
+      if (userId) {
+        localStorage.setItem("pendingUserId", userId);
+        toast.success("Registered! Please verify OTP sent to your email.");
+        setSuccess("Registered! Redirecting to OTP verification...");
+        setLoading(false);
+        setTimeout(() => navigate("/verify-otp"), 1000);
+      } else {
+        toast.error("Registration failed. Missing userId.");
+        setLoading(false);
+      }
     } catch (error) {
       console.error("Error during registration:", error.message, error.stack);
       setError(
         error.response?.data?.error || "An error occurred during registration."
       );
       setLoading(false);
+      recaptchaRef.current.reset();
+      setCaptchaToken(null);
     }
   };
 
@@ -239,7 +274,6 @@ const RegisterPage = () => {
                 placeholder="Phone number"
               />
             </div>
-
             <div className="relative group">
               <Lock className="absolute left-4 top-3.5 text-gray-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
               <input
@@ -261,8 +295,15 @@ const RegisterPage = () => {
                   <EyeOff className="w-5 h-5" />
                 )}
               </div>
+
               {passwordStrengthVisible && (
-                <PasswordStrengthBar score={passwordStrength} />
+                <>
+                  <PasswordStrengthBar score={passwordStrength} />
+                  <p className="text-sm text-gray-500 mt-1 ml-1">
+                    Must be at least 8 characters with uppercase, lowercase,
+                    number, and special character.
+                  </p>
+                </>
               )}
             </div>
 
@@ -299,6 +340,14 @@ const RegisterPage = () => {
               </p>
             )}
 
+            <div className="mt-4">
+              <ReCAPTCHA
+                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                onChange={onCaptchaChange}
+                ref={recaptchaRef}
+              />
+            </div>
+
             <div className="flex items-start gap-3 pt-2">
               <input
                 type="checkbox"
@@ -326,7 +375,7 @@ const RegisterPage = () => {
             <button
               type="submit"
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              disabled={!passwordMatch || loading}
+              disabled={!passwordMatch || loading || !captchaToken}
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">

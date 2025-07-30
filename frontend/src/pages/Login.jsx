@@ -7,9 +7,6 @@ import { toast } from "react-toastify";
 import { useAuth } from "../Context/AuthContext";
 
 const LoginPage = () => {
-  console.log("import.meta.env:", import.meta.env);
-  console.log("API Base URL:", import.meta.env.VITE_API_BASE_URL);
-
   const savedEmail = localStorage.getItem("rememberedEmail") || "";
   const [data, setData] = useState({ email: savedEmail, password: "" });
   const [rememberMe, setRememberMe] = useState(!!savedEmail);
@@ -36,18 +33,13 @@ const LoginPage = () => {
 
     try {
       const response = await axios.post(
-        // Use environment variable here
         `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
         data
       );
 
-      const { token, mfaRequired, userId } = response.data;
+      const { token } = response.data;
 
-      if (mfaRequired) {
-        localStorage.setItem("pendingUserId", userId);
-        navigate("/verify-otp");
-      } else if (token) {
-        localStorage.removeItem("pendingUserId");
+      if (token) {
         localStorage.setItem("authToken", token);
         const decoded = jwtDecode(token);
         const role = decoded.role;
@@ -56,6 +48,7 @@ const LoginPage = () => {
         toast.success("Login successful!");
 
         if (role === "admin") {
+          localStorage.setItem("adminToken", token);
           navigate("/admin");
         } else {
           navigate("/");
