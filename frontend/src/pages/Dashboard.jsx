@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Navbar from "../components/Navbar";
+import Footer from "./footer";
 
 const Dashboard = () => {
   const [hotels, setHotels] = useState([]);
@@ -151,7 +152,7 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="pt-6 h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <Navbar />
         <div className="sticky top-20 z-40 bg-white shadow-md">
           <div className="w-full flex items-center justify-between px-4 py-3">
@@ -278,7 +279,7 @@ const Dashboard = () => {
                   </p>
                   <button
                     onClick={() => goToHotelDetails(hotel._id)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md w-full"
+                    className="text-black px-4 py-2 rounded-md w-full bg-gradient-to-br from-blue-500 to-green-300 cursor-pointer"
                   >
                     View Details
                   </button>
@@ -298,6 +299,7 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+      <Footer />
     </>
   );
 };
