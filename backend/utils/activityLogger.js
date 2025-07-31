@@ -15,3 +15,4 @@ const logActivity = async ({ req, userId, action, details }) => {
 };
 
 module.exports = logActivity;
+

@@ -8,7 +8,7 @@ const hotelRoute = require("./routes/hotelRoute.js");
 const wishlistRoute = require("./routes/wishlistRoute.js");
 const bookingRoute = require("./routes/bookingRoute.js");
 const activityLogRoute = require("./routes/activityLogRoutes.js");
-
+const session = require("express-session");
 connectDB();
 
 const app = express();
@@ -17,7 +17,20 @@ const cookieParser = require("cookie-parser");
 
 app.use(cookieParser());
 app.use(helmet());
-app.use(cors());
+// app.use(cors());
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: true,
+      maxAge: 3600000,
+    },
+  })
+);
 
 app.post("/api/booking/webhook", express.raw({ type: "application/json" }));
 
@@ -56,7 +69,7 @@ const path = require("path");
 if (require.main === module && process.env.NODE_ENV !== "test") {
   const options = {
     key: fs.readFileSync(path.resolve(__dirname, "./certs/localhost-key.pem")),
-    cert: fs.readFileSync(path.resolve(__dirname, "./certs/localhost.pem")),
+    cert: fs.readFileSync(path.resolve(__dirname, "./certs/localhost.crt")),
   };
 
   https.createServer(options, app).listen(3000, "0.0.0.0", () => {

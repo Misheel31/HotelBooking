@@ -6,7 +6,7 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
-    console.log("🚨 Rate limit exceeded for IP:", req.ip);
+    console.log("Rate limit exceeded for IP:", req.ip);
     res.status(429).json({
       status: 429,
       error: "Too many login attempts. Please try again later.",

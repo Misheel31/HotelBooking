@@ -25,11 +25,11 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ error: "CAPTCHA validation failed" });
     }
 
-    if (!username || !email || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword || !phone) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res
         .status(400)
         .json({ error: "Password must be at least 8 characters long" });
@@ -52,6 +52,10 @@ const registerUser = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ error: "Email is already registered" });
     }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = Date.now() + 15 * 60 * 1000;
+
     const encryptedPhone = encrypt(phone);
 
     const user = new User({
@@ -59,9 +63,9 @@ const registerUser = async (req, res) => {
       email,
       password,
       phone: encryptedPhone,
+      otp,
+      otpExpiry,
     });
-    await user.save();
-
     await user.save();
 
     await logActivity({
@@ -85,26 +89,26 @@ const registerUser = async (req, res) => {
     });
 
     try {
-      const info = await transporter.sendMail({
-        from: "misheelrai7@gmail.com",
+      await transporter.sendMail({
+        from: '"Hotel Booking" <misheelrai7@gmail.com>',
         to: user.email,
-        subject: "User Registration Successful",
+        subject: "Verify Your Account - OTP",
         html: `
-          <h1>Welcome!</h1>
-          <p>Dear ${user.username},</p>
-          <p>Your registration was successful. Your user ID is <strong>${user.id}</strong>.</p>
-          <p>Thank you for joining us!</p>
+          <h1>Welcome to Our App!</h1>
+          <p>Your OTP is <b>${otp}</b>. It expires in 15 minutes.</p>
         `,
       });
     } catch (emailError) {
-      console.error("Error sending registration email:", emailError);
+      console.error("Error sending OTP email:", emailError);
     }
+
     res.status(201).json({
-      message: "User registered successfully. Confirmation email sent.",
-      // user: { username: user.username, email: user.email },
+      mfaRequired: true,
+      message: "User registered successfully. OTP sent to email.",
+      userId: user._id,
     });
   } catch (error) {
-    console.error("Error during registration:", error.message, error.stack);
+    console.error("Error during registration:", error.message);
     res.status(500).json({ error: "An error occurred during registration" });
   }
 };
@@ -128,6 +132,16 @@ const loginUser = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ error: "Invalid password" });
     }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        username: user.username,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "90d" }
+    );
 
     if (user.role === "admin") {
       const token = jwt.sign(
@@ -155,32 +169,6 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = Date.now() + 15 * 60 * 1000;
-
-    user.otp = otp;
-    user.otpExpiry = otpExpiry;
-    await user.save();
-
-    await logActivity({
-      req,
-      userId: user._id,
-      action: "USER_LOGIN_OTP_SENT",
-      details: {
-        email: user.email,
-      },
-    });
-
-    const token = jwt.sign(
-      {
-        id: user._id,
-        username: user.username,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "90d" }
-    );
-
     user.tokens = user.tokens.concat({ token });
     await user.save();
 
@@ -204,14 +192,17 @@ const loginUser = async (req, res) => {
     await transporter.sendMail({
       from: '"Hotel Booking" <misheelrai7@gmail.com>',
       to: user.email,
-      subject: "Your Login OTP",
-      html: `<p>Your OTP code is <b>${otp}</b>. It expires in 15 minutes.</p>`,
+      subject: "Login Successful",
+      html: `<p>Hello ${user.username},</p>
+         <p>You have successfully logged into your Hotel Booking account.</p>
+         <p>If this wasn’t you, please contact our support team immediately.</p>
+         <p>Thank you!</p>`,
     });
 
     res.status(200).json({
-      mfaRequired: true,
-      message: "OTP sent to your email. Please verify to complete login.",
+      message: "Login in successful",
       userId: user._id,
+      token,
     });
   } catch (error) {
     console.error("Error during login:", error);

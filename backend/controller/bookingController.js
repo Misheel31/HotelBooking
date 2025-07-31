@@ -3,6 +3,7 @@ const Booking = require("../model/bookingModel");
 const Stripe = require("stripe");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const logActivity = require("../utils/activityLogger");
+const nodemailer = require("nodemailer");
 
 const createBooking = async (req, res) => {
   try {
@@ -98,6 +99,12 @@ const getBookingsByUserId = async (req, res) => {
 const deleteBookingById = async (req, res) => {
   try {
     const bookingId = req.params.id;
+    const booking = await Booking.findById(bookingId).populate("userId");
+
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
     await Booking.findByIdAndDelete(bookingId);
     // Log activity
     await logActivity({
@@ -106,6 +113,29 @@ const deleteBookingById = async (req, res) => {
       action: "DELETE_BOOKING",
       details: { bookingId },
     });
+
+    if (booking.userId && booking.userId.email) {
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+      await transporter.sendMail({
+        from: '"StayNest Hotel Booking" <' + process.env.EMAIL_USER + ">",
+        to: booking.userId.email,
+        subject: "Booking Canceled",
+        html: `
+          <h2>Booking Canceled</h2>
+          <p>Hello ${booking.userId.username},</p>
+          <p>Your booking (ID: <strong>${booking._id}</strong>) has been successfully canceled.</p>
+          <p>We hope to serve you again in the future.</p>
+        `,
+      });
+    }
 
     res.status(200).json({ message: "Booking canceled successfully" });
   } catch (error) {
@@ -183,6 +213,40 @@ const stripeWebhook = async (req, res) => {
 
     try {
       await Booking.findByIdAndUpdate(bookingId, { paymentStatus: "Paid" });
+      const booking = await Booking.findById(bookingId).populate("userId");
+      const user = booking?.userId;
+
+      if (user?.email) {
+        const transporter = nodemailer.createTransport({
+          host: "smtp.gmail.com",
+          port: 587,
+          secure: false,
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+        await transporter.sendMail({
+          from: `"StayNest Booking" <${process.env.EMAIL_USER}>`,
+          to: user.email,
+          subject: "Booking Confirmed",
+          html: `
+            <h2>Thanks for booking with StayNest!</h2>
+            <p>Hi ${user.username}, your booking is now confirmed.</p>
+            <ul>
+              <li><strong>Booking ID:</strong> ${booking._id}</li>
+              <li><strong>Check‑in:</strong> ${new Date(
+                booking.checkInDate
+              ).toLocaleDateString()}</li>
+              <li><strong>Check‑out:</strong> ${new Date(
+                booking.checkOutDate
+              ).toLocaleDateString()}</li>
+              <li><strong>Total Paid:</strong> $${booking.totalPrice}</li>
+            </ul>
+            <p>We look forward to hosting you!</p>
+          `,
+        });
+      }
       console.log(`Booking ${bookingId} marked as paid.`);
 
       // Log activity

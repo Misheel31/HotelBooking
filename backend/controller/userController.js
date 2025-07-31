@@ -1,5 +1,6 @@
 const User = require("../model/userModel");
 const nodemailer = require("nodemailer");
+const { decrypt } = require("../utils/encryption");
 
 const findAll = async (req, res) => {
   try {
@@ -45,6 +46,9 @@ const save = async (req, res) => {
 const findById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
+    if (user.phone) {
+      user.phone = decrypt(user.phone);
+    }
     res.status(200).json(user);
   } catch (e) {
     res.json(e);
@@ -62,6 +66,9 @@ const deleteById = async (req, res) => {
 
 const update = async (req, res) => {
   try {
+    if (req.body.phone) {
+      req.body.phone = encrypt(req.body.phone);
+    }
     const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
