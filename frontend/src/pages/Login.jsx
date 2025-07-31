@@ -37,17 +37,17 @@ const LoginPage = () => {
         data
       );
 
-      const { token } = response.data;
+      const { token, userId } = response.data;
 
-      if (token) {
-        localStorage.setItem("authToken", token);
-        const decoded = jwtDecode(token);
-        const role = decoded.role;
-        console.log("Decoded user role:", role);
+      if (token && userId) {
+        const decoded = jwtDecode(token); // decode to get username
+        const username = decoded.username; // extract username
+
+        login(token, username, userId); // ✅ this is the missing piece!
 
         toast.success("Login successful!");
 
-        if (role === "admin") {
+        if (decoded.role === "admin") {
           localStorage.setItem("adminToken", token);
           navigate("/admin");
         } else {

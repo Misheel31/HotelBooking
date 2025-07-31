@@ -24,7 +24,7 @@ const VerifyOTPPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/auth/verify-login-otp",
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-login-otp`,
         { userId, otp }
       );
 
@@ -38,7 +38,7 @@ const VerifyOTPPage = () => {
       if (user.role === "admin") {
         navigate("/admin");
       } else {
-        navigate("/dashboard");
+        navigate("/login");
       }
     } catch (err) {
       console.log("OTP verification error:", err.response?.data);

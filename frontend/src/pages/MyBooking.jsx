@@ -21,9 +21,12 @@ const MyBookings = () => {
     if (!_id) return;
 
     try {
-      const res = await axios.get(`http://localhost:3000/api/booking/${_id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/booking/${_id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       console.log("Bookings fetched:", res.data);
       setBookings(res.data);
       setError("");
@@ -44,7 +47,9 @@ const MyBookings = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:3000/api/booking/create-checkout-session",
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/api/booking/create-checkout-session`,
         {
           totalPrice: booking.totalPrice,
           bookingId: booking._id,
@@ -90,9 +95,12 @@ const MyBookings = () => {
       return;
 
     try {
-      await axios.delete(`http://localhost:3000/api/booking/${bookingId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}/api/booking/${bookingId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setSuccess("Booking canceled.");
       toast.success("Booking canceled.");
       fetchBookings();
@@ -131,7 +139,9 @@ const MyBookings = () => {
             <div className="w-full h-48 bg-gray-100">
               {booking.hotelRoomId?.image ? (
                 <img
-                  src={`http://localhost:3000/hotel_room_images/${booking.hotelRoomId.image}`}
+                  src={`${
+                    import.meta.env.VITE_API_BASE_URL
+                  }/hotel_room_images/${booking.hotelRoomId.image}`}
                   alt={booking.hotelRoomId.title}
                   className="w-full h-48 object-cover"
                 />

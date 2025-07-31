@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
-import logo from "../assets/logo.svg";
+import logo from "../assets/logo.png";
 import { useAuth } from "../Context/AuthContext";
 
 const Navbar = () => {

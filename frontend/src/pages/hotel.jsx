@@ -12,7 +12,7 @@ const Hotel = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          "http://localhost:3000/api/hotel/hotel-rooms"
+          `${import.meta.env.VITE_API_BASE_URL}/api/hotel/hotel-rooms`
         );
         setHotels(response.data);
       } catch (err) {
@@ -57,7 +57,9 @@ const Hotel = () => {
                 className="bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden border border-gray-100"
               >
                 <img
-                  src={`http://localhost:3000/hotel_room_images/${hotel.image}`}
+                  src={`${
+                    import.meta.env.VITE_API_BASE_URL
+                  }/hotel_room_images/${hotel.image}`}
                   alt={hotel.title}
                   className="w-full h-48 object-cover"
                 />
@@ -71,7 +73,7 @@ const Hotel = () => {
                     <span className="text-green-600 font-bold">
                       ${hotel.pricePerNight}/night
                     </span>
-                    <button className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition text-sm">
+                    <button className="bg-blue-200 text-white px-3 py-1 rounded hover:bg-blue-400 transition text-sm cursor-pointer">
                       View Details
                     </button>
                   </div>

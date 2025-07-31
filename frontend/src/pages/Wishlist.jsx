@@ -16,7 +16,7 @@ const HotelWishlist = () => {
       return;
     }
 
-    fetch(`http://localhost:3000/api/wishlist/${_id}`, {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/wishlist/${_id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -42,9 +42,12 @@ const HotelWishlist = () => {
 
   const handleRemove = async (hotel) => {
     try {
-      await fetch(`http://localhost:3000/api/wishlist/${hotel._id}`, {
-        method: "DELETE",
-      });
+      await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/wishlist/${hotel._id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       setWishlistHotels((prev) =>
         prev.filter((item) => item._id !== hotel._id)
@@ -93,7 +96,9 @@ const HotelWishlist = () => {
                 >
                   <div className="relative w-full aspect-[4/3] bg-gray-100">
                     <img
-                      src={`http://localhost:3000/hotel_room_images/${hotel.image}`}
+                      src={`${
+                        import.meta.env.VITE_API_BASE_URL
+                      }/hotel_room_images/${hotel.image}`}
                       alt={hotel.title}
                       className="w-full h-full object-cover"
                     />
